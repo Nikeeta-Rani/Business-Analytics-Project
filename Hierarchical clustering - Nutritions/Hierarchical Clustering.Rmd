@@ -1,0 +1,222 @@
+---
+title: "FML - Assignment 5"
+author: "Nikeeta Rani"
+date: "2024-04-06"
+output: html_document
+---
+
+# Loading Necessary Packages
+```{r}
+library(stats)
+library(cluster)
+library(factoextra)
+```
+
+# Loading Data
+```{r}
+file_path <- read.csv("C:/Users/hp/Desktop/KSU/FML/Assignment 5/Cereals.csv")
+cereals<-file_path
+```
+
+# Identifying Missing Values
+```{r}
+Missing_Data<-colMeans(is.na(cereals))
+Missing_Data
+```
+# Removing Missing Values
+```{r}
+cereals<-na.omit(cereals)
+Missing_Data<-colMeans(is.na(cereals))
+Missing_Data
+```
+# Normalizing Numeric Values
+```{r}
+num_col <- sapply(cereals, is.numeric)
+cereal_num<-cereals[num_col]
+cereals_normalized<-scale(cereal_num)
+head(cereals_normalized)
+```
+# Combined Categorical Values in Normalized Data set
+```{r}
+Categorical_Col <- cereals[,1:3]
+Cereal_Numerical_Col<-cereals_normalized[,1:13]
+cereal_final1 <- cbind(Categorical_Col,Cereal_Numerical_Col)
+colnames(cereal_final1)
+head(cereal_final1)
+```
+```{r}
+cereal_final1<-as.data.frame(cereal_final1)
+cereal_final<-na.omit(cereal_final1)
+```
+
+```{r}
+infinite_columns <- sapply(cereal_final, function(x) any(is.infinite(x)))
+total_infinite_columns <- sum(infinite_columns)
+if (total_infinite_columns > 0) {
+  cat("There are", total_infinite_columns, "columns with infinite values in the dataset.\n")
+} else {
+  cat("No infinite values found in the dataset.\n")
+}
+```
+```{r}
+nan_columns <- sapply(cereal_final, function(x) any(is.nan(x)))
+total_nan_columns <- sum(nan_columns)
+if (total_nan_columns > 0) {
+  cat("There are", total_nan_columns, "columns with NaN values in the dataset.\n")
+} else {
+  cat("No NaN values found in the dataset.\n")
+}
+```
+
+
+# Hierarchical Clustering using Euclidean Distance
+```{r}
+rownames(cereals_normalized) <- Categorical_Col[, 1]
+Distance <- dist(cereals_normalized, method = "euclidean")
+hc1<-hclust(Distance, method = "complete") # using complete linkage
+plot(hc1, cex= 0.6, hang = -1)
+```
+
+
+# Computing with Agnes and with different linkage method 
+```{r}
+hc_single<-agnes(cereals_normalized, method = "single")
+hc_complete<-agnes(cereals_normalized, method = "complete")
+hc_average<-agnes(cereals_normalized, method = "average")
+hc_ward<-agnes(cereals_normalized, method = "ward")
+```
+
+```{r}
+print(hc_single$ac)
+print(hc_complete$ac)
+print(hc_average$ac)
+print(hc_ward$ac)
+
+```
+
+
+```{r}
+pltree(hc_single, cex=0.6, hang=-1, main = "Dendrogram")
+pltree(hc_complete, cex=0.6, hang=-1, main = "Dendrogram")
+pltree(hc_average, cex=0.6, hang=-1, main = "Dendrogram")
+pltree(hc_ward, cex=0.6, hang=-1, main = "Dendrogram")
+```
+
+### Analysis: Ward linkage  is the best method for this data. It has has the highest agglomerative Coefficient i.e 0.9046042 (nearest to 1) which shows that it has the highest cohesion in clusters as compared to other methods used above. It gives more balanced cluster while minimizing the variance within each clusters. 
+
+
+# Identifying Number of Clusters using Elbow method
+```{r}
+set.seed(123)
+fviz_nbclust(cereal_final, FUN = hcut, method = "wss")
+```
+
+```{r}
+no_of_Clusters <- cutree(hc_ward, k = 5) 
+```
+```{r}
+num_clusters <- length(unique(no_of_Clusters))
+print(num_clusters)
+```
+### Analysis: Total numbers of clusters formed by using Ward Linkage method is 5. 
+
+
+# Identifying Structure and stability of the Clusters:
+```{r}
+Combined_data<-as.data.frame(cbind(cereal_final, no_of_Clusters))
+numeric_data <- Combined_data[, sapply(Combined_data, is.numeric)]
+```
+
+```{r}
+fviz_cluster(list(data = numeric_data, cluster = no_of_Clusters))
+```
+
+
+```{r}
+centroids <- t(sapply(unique(no_of_Clusters), function(cluster) {
+  colMeans(numeric_data[no_of_Clusters == cluster, ])
+}))
+print(centroids)
+```
+
+## Creating Partitions 
+```{r}
+set.seed(123)  # For reproducibility
+indices <- sample(nrow(cereals_normalized), size = 0.5 * nrow(cereals_normalized))
+Partition_A <- cereals_normalized[indices, ]
+Partition_B <- cereals_normalized[-indices, ]
+
+agnes_single<-agnes(Partition_A, method = "single")
+agnes_average<-agnes(Partition_A, method = "average")
+agnes_complete<-agnes(Partition_A, method = "complete")
+agnes_ward<-agnes(Partition_A, method = "ward")
+```
+
+
+```{r}
+agnes_single$ac
+agnes_average$ac
+agnes_complete$ac
+agnes_ward$ac
+```
+```{r}
+hc_A <- agnes(Partition_A, method = "ward")
+cut_A <- cutree(hc_A, k = 5)
+centroids_A <- aggregate(Partition_A, by=list(cut_A), FUN=mean)
+```
+
+```{r}
+assign_Centeroid <- function(observation, centroids) {
+  distances <- apply(centroids[, -1], 1, function(centroid) sum((observation - centroid)^2))
+  return(which.min(distances))
+}
+cluster_assignments_B <- apply(Partition_B, 1, assign_Centeroid, centroids_A)
+```
+
+```{r}
+hc_full <- agnes(cereals_normalized, method = "ward")
+cut_full <- cutree(hc_full, k = 5)
+table(cluster_assignments_B, cut_full[-indices])
+```
+
+## Analysis: 
+###  Consistency and Stability:
+for Consistency, the above tables shows that the all the data points in partition B were being clustered in the same way as it was clustered in whole data set. Cluster 4 shows the highest level of consistency followed by cluster 3. cluster 1 indicated the least consistency between the cereal points assigned in Partition 1 and full data set. For Stability,  Input features carries a huge impact in cluster formulation, therefore using these features, we can find almost same clusters for these data points in partitioned data as we identified in whole data set. It can be seen in the table above that the majority of the data points are grouped in the same clusters for Partitioned data as well as whole data set. 
+
+
+# Identifying Optimal Cluster for Healthy Cereal
+```{r}
+
+cereals_clean <- cereals[complete.cases(cereals), ]
+agnes_ward <- agnes(cereals_clean[, -c(1:3)], method="ward") 
+
+
+hc_ward <- as.hclust(agnes_ward)
+clustering <- cutree(hc_ward, k=5)
+
+
+if(length(clustering) == nrow(cereals_clean)) {
+  # Calculate the cluster means
+  cluster_means <- aggregate(cereals_clean[, -c(1:3)], by = list(cluster = clustering), FUN = mean)
+
+  # Identify the 'healthy' cluster
+  healthy_cluster_index <- which.max(cluster_means$fiber + cluster_means$protein  - cluster_means$sugar - cluster_means$fat)
+  healthy_cluster <- cluster_means[healthy_cluster_index, ]
+} else {
+  stop("The number of cluster assignments does not match the number of rows in the dataset.")
+}
+```
+
+```{r}
+print(cluster_means)
+print(healthy_cluster_index)
+print(healthy_cluster)
+
+```
+
+## Analysis:  Cluster 2 represents the best cluster for "healthy cereals" because it has less sugar content and fat and contains good amount od fiber and protein as compared to other clusters.
+
+### Why Normalization is Important 
+It is necessary to normalize to data for the clustering as it is sensitive to outliers and noise. Each feature has different scales and units, to scale them in one unit, we normalize the data because in clustering, clusters are formed based on the distances between each data point. After normalizing every feature carries the equal weight when they are assigned to clusters. without normalization, if there any outlier exists in the data, it will have huge impact on the clusters formations.
+
+

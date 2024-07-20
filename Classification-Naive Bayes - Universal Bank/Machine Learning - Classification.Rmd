@@ -1,0 +1,156 @@
+---
+title: "FML - Assignment 3"
+author: "Nikeeta Rani"
+date: "2024-03-05"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+file_path<-"C:/Users/hp/Desktop/KSU/FML/Assignment 3/UniversalBank.csv"
+Universal_bank<-read.csv(file_path)
+```
+
+# Load Necessary Packages
+```{r}
+library(caret)
+library(ISLR)
+library(e1071)
+```
+
+# Summary of Universal Bank
+```{r}
+summary(Universal_bank)
+```
+
+# Keeping only Specific Variables 
+```{r}
+colnames(Universal_bank)
+```
+```{r}
+Universal_bank <- Universal_bank[, c("Personal.Loan", "Online", "CreditCard")]
+set.seed(123)
+```
+
+```{r}
+### for Interpretation:
+### Personal.Loan: 1= Accepted 0=Rejected 
+### Online: 1= Active 0= Non-Active
+### Credit Car: 1= CardHolder 0=Non-CardHolder 
+
+```
+
+
+# Partioning the dataset into 60% Training and 40% Testing 
+```{r}
+Index_Train <- createDataPartition(Universal_bank$Personal.Loan, p = 0.6, list = FALSE)
+Train <- Universal_bank[Index_Train,]
+Test <- Universal_bank[-Index_Train,]
+```
+
+
+
+# Pivot Table 
+```{r}
+pivot_table <- table(CreditCard = Train$CreditCard,Online = Train$Online, 
+                           PersonalLoan = Train$Personal.Loan)
+pivot_table
+```
+
+
+# Calculating Probabilty 
+```{r}
+loan_accepted_online_cc<- pivot_table["1", "1", "1"]
+total_online_cc <- sum(pivot_table["1", "1", ])
+probability_loan_acceptance <- loan_accepted_online_cc / total_online_cc
+probability_loan_acceptance
+```
+
+
+# Pivot Table: Loan (rows) as a function of Online (columns) 
+```{r}
+pivot_loan_online <- table(PersonalLoan = Train$Personal.Loan, Online = Train$Online)
+pivot_loan_online
+```
+
+
+#Pivot Table:Loan (rows) as a function of CC.
+```{r}
+pivot_loan_cc <- table(PersonalLoan = Train$Personal.Loan, CreditCard = Train$CreditCard)
+pivot_loan_cc
+```
+
+
+# Computing the following Quantities 
+## P(CC = 1 | Loan = 1)
+```{r}
+CardHolder_Loan_Accepted <- pivot_loan_cc["1", "1"] / sum(pivot_loan_cc["1", ])
+CardHolder_Loan_Accepted
+```
+## P(Online = 1 | Loan = 1)
+```{r}
+Online_User_and_Loan_Accepted <- pivot_loan_online["1", "1"] / sum(pivot_loan_online["1", ])
+Online_User_and_Loan_Accepted
+```
+## P(Loan = 1)
+```{r}
+Loan_Accepted <- sum(Train$Personal.Loan == 1) / nrow(Train)
+Loan_Accepted
+
+```
+
+## P(CC = 1 | Loan = 0)
+```{r}
+CardHolder_Loan_Rejected <- pivot_loan_cc["0", "1"] / sum(pivot_loan_cc["0", ])
+CardHolder_Loan_Rejected
+```
+## P(Online = 1 | Loan = 0)
+```{r}
+Non_Active_User_Loan_Rejected <- pivot_loan_online["0", "1"] / sum(pivot_loan_online["0", ])
+Non_Active_User_Loan_Rejected
+
+```
+## P(Loan = 0)
+```{r}
+Loan_Rejected <- sum(Train$Personal.Loan == 0) / nrow(Train)
+Loan_Rejected
+```
+# Naive Bayes Probabilty P(Loan = 1 | CC = 1, Online = 1)
+```{r}
+CardHolder_Online_User <- nrow(Train[Train$CreditCard == 1 & Train$Online == 1, ]) / nrow(Train)
+Loan_Accepted_Carholder_Online_User<- (CardHolder_Loan_Accepted* Online_User_and_Loan_Accepted * Loan_Accepted) / CardHolder_Online_User
+Loan_Accepted_Carholder_Online_User
+```
+# Comparing the value  from the pivot table with the Naive Bayes Probabilty 
+```{r}
+probability_loan_acceptance # Pivot Table
+Loan_Accepted_Carholder_Online_User # Naive Bayes Probability 
+```
+```{r}
+## Analysis: There is a slight difference between both the values. The value obtained from the Pivot table seems to be more accurate as it based on actual raw rata without making any assumption. Whereas, value obtained from Naive bayes incorporates different assumptions such as features independence which may not be be always true in real data. 
+```
+
+
+# Naive Bayes Model
+```{r}
+library(e1071)
+model <- naiveBayes(Personal.Loan ~ CreditCard + Online, data = Train)
+predict_prob <- predict(model, Train, type = "raw")
+nb_probability <- predict_prob[Train$CreditCard == 1 & Train$Online == 1, 2]
+nb_probability
+```
+
+```{r}
+
+# Probability obtained from Naive bayes model can seems to be more  accurate than the probabiltiy calculated from section(E)  because model-dervided probabilty considers that distribution and  relationship within the data which are not identifies in simplfied calculations. 
+```
+
+
+ 
+
+
+
+
+
+

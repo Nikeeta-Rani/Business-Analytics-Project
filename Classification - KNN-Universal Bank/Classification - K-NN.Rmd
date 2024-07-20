@@ -1,0 +1,221 @@
+---
+title: "FML Assignement_2"
+author: "Nikeeta"
+date: "2024-02-24"
+output: html_document
+---
+```{r}
+file_path<-"C:/Users/hp/Desktop/KSU/FML/Assignment 2/UniversalBank.csv"
+Universal_Bank<-read.csv(file_path)
+```
+
+# Load all necessary Packages 
+```{r}
+library(ISLR)
+library(caret)
+library(dplyr)
+library(class)
+```
+
+
+# Transforming Education in Dummy Variable 
+```{r}
+Universal_Bank <- Universal_Bank %>%
+  mutate(Education = case_when(
+    Education == 1 ~ "Education_1",
+    Education == 2 ~ "Education_2",
+    Education == 3 ~ "Education_3",
+    TRUE ~ as.character(Education)  ))
+```
+
+```{r}
+dummy_model<-dummyVars(~Education, data=Universal_Bank)
+dummy_data <- predict(dummy_model, newdata = Universal_Bank)
+Universal_Bank <- Universal_Bank[, !colnames(Universal_Bank) %in% "Education"]
+Universal_Bank <- cbind(Universal_Bank, dummy_data)
+head(Universal_Bank)
+```
+
+# Changing the Column Names  
+```{r}
+colnames(Universal_Bank)[colnames(Universal_Bank) == "EducationEducation_1"] <- "Education_1"
+colnames(Universal_Bank)[colnames(Universal_Bank) == "EducationEducation_2"] <- "Education_2"
+colnames(Universal_Bank)[colnames(Universal_Bank) == "EducationEducation_3"] <- "Education_3"
+```
+
+# Switiching the Positions of Column
+
+```{r}
+Universal_Bank<-Universal_Bank[,c("ID","Age","Experience","Income","ZIP.Code","Family","CCAvg","Education_1", "Education_2","Education_3","Mortgage","Securities.Account","CD.Account","Online","CreditCard","Personal.Loan")]
+```
+
+```{r}
+colnames(Universal_Bank)
+```
+
+# Excluding ID and Zip Code 
+```{r}
+Universal_Bank<-Universal_Bank[-c(1,5)]
+colnames(Universal_Bank)
+```
+
+
+# Normalizing the data Except for Response "Personal Loan"
+```{r}
+response_variable <- "Personal.Loan"
+exclude_column_index <- 14
+predictor_variables <- setdiff(colnames(Universal_Bank), c(response_variable, colnames(Universal_Bank)[exclude_column_index]))
+normalized_Model <- preProcess(Universal_Bank[, predictor_variables], method = c('range'))
+Universal_Bank_Normalized <- predict(normalized_Model, newdata = Universal_Bank[, predictor_variables])
+```
+
+```{r}
+colnames(Universal_Bank_Normalized)
+```
+
+# Combining Personal Loan in Normalized Data set 
+```{r}
+Personal_Loan <- Universal_Bank[, 14]
+combined_data <- cbind(Universal_Bank_Normalized[, 1:13], Personal_Loan)
+colnames(combined_data)
+```
+
+
+#Dividind the data in 60% triaining and 40% Testing 
+```{r}
+Index_train <- createDataPartition(combined_data$Personal_Loan, p = 0.6, list = FALSE)
+set.seed(123)
+Train <- combined_data[Index_train, ]
+Test <- combined_data[-Index_train, ]
+```
+
+```{r}
+Train_Predictors <- Train[, 1:13]
+Test_Predictors <- Test[, 1:13]
+
+Train_labels <- Train[, 14]
+Test_labels <- Test[, 14]
+```
+
+# K-NN classification using K=1
+```{r}
+Predicted_Test_labels1 <- knn(Train_Predictors, Test_Predictors, cl = Train_labels, k = 1)
+head(Predicted_Test_labels1)
+```
+
+# New Customer # 1 data 
+```{r}
+new_customer<-data.frame(Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2,
+  Education_1 = 0, Education_2 = 1, Education_3 = 0,
+  Mortgage = 0, Securities.Account = 0, CD.Account = 0, Online = 1, CreditCard = 1)
+```
+
+#Normalizing New Customer 
+```{r}
+new_customer_normalized <- predict(normalized_Model, newdata = as.data.frame(new_customer[predictor_variables]))
+```
+
+#New Customer Classification Using K=1
+```{r}
+  prediction1  <- knn(Train_Predictors, new_customer_normalized, cl = Train_labels, k = 1)
+  head(prediction1)
+```
+#Outcome:  New Customer # 1 will not accept the Personal Loan `
+
+
+#Selecting Best K
+```{r}
+set.seed(123)
+Search_Grid <- expand.grid(k = 2:10) 
+Train_labels <- as.factor(Train_labels)
+model <- train(x = Train_Predictors, y = Train_labels, method = "knn", tuneGrid = Search_Grid) 
+model
+```
+```{r}
+library(caret)
+```
+
+
+# K-NN classification using K=2
+```{r}
+Predicted_Test_labels2 <- knn(Train_Predictors, Test_Predictors, cl = Train_labels, k = 2)
+head(Predicted_Test_labels2)
+```
+# Confusion Matrix (60% Training and 40%Testing)
+```{r}
+Predicted_Test_labels2 <- as.factor(Predicted_Test_labels2)
+Test_labels <- as.factor(Test_labels)
+Confusion_Matrix1 <- confusionMatrix(data = Predicted_Test_labels2, reference = Test_labels)
+Confusion_Matrix1
+```
+
+
+# New Customer Classification Using k=2 
+```{r}
+ prediction2 <- knn(Train_Predictors,new_customer_normalized,cl=Train_labels,k=2)
+  head(prediction2)
+```
+#Outcome:  New Customer # 1 will not accept the Personal Loan `
+
+
+
+# Dividind the data in 50% triaining and 30% Validation and 20% Training 
+```{r}
+Train_Index <- sample(seq(1, 3), size = nrow(combined_data), replace = TRUE, prob = c(0.5, 0.30, 0.20))
+set.seed(123)
+Train_Data = combined_data[Train_Index == 1, ]
+Validate_Data = combined_data[Train_Index == 2, ]
+Test_Data = combined_data[Train_Index == 3, ]
+```
+
+```{r}
+summary(as.numeric(Train_Data$Personal_Loan))
+summary(Validate_Data$Personal_Loan)
+summary(Test_Data$Personal_Loan)
+```
+
+```{r}
+Train_Predictors1 <- Train_Data[, 1:13]
+Validate_Predictors1 <- Validate_Data[, 1:13]
+Test_Predictors1 <- Test_Data[, 1:13]
+
+Train_labels1 <- Train_Data[, 14]
+Validate_Labels1 <- Validate_Data[, 14]
+Test_labels1 <- Test_Data[, 14]
+```
+
+
+# K-NN Classification using
+```{r}
+library(class)
+Predicted_Test_labels3 <- knn(Train_Predictors1, Test_Predictors1, cl = Train_labels1, k = 2)
+head(Predicted_Test_labels3)
+```
+# Confusion Matrix for Validation
+```{r}
+(library(caret))
+Predicted_Validation_labels <- knn(Train_Predictors1, Validate_Predictors1, cl = Train_labels1, k = 2)
+head(Predicted_Validation_labels)
+Predicted_Validation_labels <- as.factor(Predicted_Validation_labels)
+Validate_Labels1 <- as.factor(Validate_Labels1)
+Confusion_Matrix_Validation <- confusionMatrix(data = Predicted_Validation_labels, reference = Validate_Labels1)
+Confusion_Matrix_Validation
+```
+# Confusion Matrix (50% Training, 30% Validation and  20%Testing)
+```{r}
+Predicted_Test_labels3 <- as.factor(Predicted_Test_labels3)
+Test_labels1 <- as.factor(Test_labels1)
+Confusion_Matrix2 <- confusionMatrix(data = Predicted_Test_labels3, reference = Test_labels1)
+Confusion_Matrix2
+```
+
+#Comparing Confusion Matrix1 with Confusion Matrix2 
+
+```{r}
+Confusion_Matrix1
+Confusion_Matrix2
+```
+
+#Analysis: In confusion_Matrix1(60:40), cases number of True Positives and True negative  is higher than Confusion_Matrix2(50:30:20). Confusion_Matrix1 indicates slightly higher performance than Confusion Matrix2 based on accuracy and kappa. Aditionally performance of the model can be evaluated more comprehensively through other metrics like precision,recall etc. The different in result in both the matrices is due to the partioning of the the data division in training set. For Confusion_Matrix1 we divided the data into 60% training while for Confusion_Matrix2, we divided the data into 50% training. Another reason can be be imbalance data. Results also differ due to the randomness process.
+
+

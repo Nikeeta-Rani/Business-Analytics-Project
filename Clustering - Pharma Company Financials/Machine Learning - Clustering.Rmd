@@ -1,0 +1,211 @@
+---
+title: "FML Assignment 4"
+author: "Nikeeta Rani"
+date: "2024-03-16"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Loading Packages 
+```{r}
+library(factoextra)
+library(ISLR)
+library(tidyverse)
+```
+
+
+```{r}
+pharma_data <- read.csv("C:\\Users\\hp\\Desktop\\KSU\\FML\\Assignment 4\\Pharmaceuticals.csv")
+```
+
+
+# Analyzing Clusters based on Elbow and Silhouette Method 
+
+## Selecting only Numerical Variable
+```{r}
+pharma_data_numerical <- pharma_data[, c(3:11)]
+colnames(pharma_data_numerical)
+```
+
+## Normalizing Data
+```{r}
+pharma_data_norm <- scale(pharma_data_numerical)
+```
+
+#Calculating and Visualizing Distance 
+```{r}
+pharma_data_Distance<-get_dist(pharma_data_norm)# Distance Calculation
+fviz_dist(pharma_data_Distance)# Distance Visualization
+```
+# Identifying Number of Clusters based on Silhoutte Method 
+
+## Using Elbow Method 
+```{r}
+set.seed(123)
+fviz_nbclust(pharma_data_norm, kmeans, method = "wss") 
+```
+#### By Using Elbow Method we got the optimal numbers of clusters i.e K=2 
+
+
+```{r}
+k2<-kmeans(pharma_data_norm, centers = 2, nstart = 25)
+k2
+```
+
+```{r}
+fviz_cluster(k2, data=pharma_data_norm)
+```
+
+
+#### we can see that by Using Elbow Method, we got 2 clusters with the size of 11 and 10.
+
+
+
+```{r}
+clusters_wss <- k2$cluster
+df1 <- cbind(pharma_data,clusters_wss)
+```
+
+```{r}
+Wss_Table <- aggregate(df1[,-c(1:2,12:14)],by=list(df1$clusters_wss),FUN="median")
+print(Wss_Table[,-1])
+```
+
+
+
+
+```{r}
+Wss_Summary <- table(df1$cluster, df1$Median_Recommendation)
+names(dimnames(Wss_Summary)) <- c("Cluster", "Recommendation")
+Wss_Summary <- addmargins(Wss_Summary)
+Wss_Summary
+```
+#### Analysis: Overall, Hold and Moderate recommendations are common in both the clusters with equal recommendations of sell in both the clusters and only 1 buy recomendation in cluster 1. No buy recommendation has been made in Cluster 1. 
+
+```{r}
+location1 <- table(df1$cluster, df1$Location)
+names(dimnames(location1)) <- c("Cluster", "Location")
+location1 <- addmargins(location1)
+location1
+```
+```{r}
+ggplot(df1,aes(x=clusters_wss,fill=Location)) + geom_bar()
+```
+
+#### Analysis: Most of the Pharma Companies resides in US (13 out  of 21). In cluster 1, 8 out of 11 companies resides in US, 2 in UK and 1 in switzerland. In cluster 2, 5 out of 10 companies are located in US Followed by UK.Cluster 2 in comparison to Cluster 1 shows more diverse representation ofn companies. 
+
+
+```{r}
+exchange1 <- table(df1$cluster, df1$Exchange)
+names(dimnames(exchange1)) <- c("Cluster", "Exchange")
+exchange1<- addmargins(exchange1)
+exchange1
+```
+
+
+```{r}
+ggplot(df1,aes(x=clusters_wss,fill=Exchange)) + geom_bar()
+```
+#### Analysis: All the compnies in cluster 1 are listed on NYSE Exchange while in cluster 2, 19 out of 21 are listed on NYSE exchange and other 2 companies are listed on NASDAQ and AMEX. 
+
+
+
+## Naming the Clusters which were formed by using Elbow Method
+
+#### Cluster 1: Established Pharma Companies 
+
+This group represent that that there is a strong potential for growth while utilizing the assets efficiently. 
+They exhibit a robust growth in revenue and Net Profit Margin. Leverage Ratio is also less than 1 indication that the companies in this group has more equity than their outstanding liabilities. 
+
+#### Cluster 2: Companies in their Growth Phase 
+
+This group represent that although the revenue growth is better than cluster 1, but its NPM ratio is less than cluster 1. One reason for lower NPM is that the companies leverage ratio in this group if higher than cluster 1 which means that the company is depended on borrowings as compared to cluster. We can assume that this group comprises of those companies who are not new players in the market as there is a growth in their revenue but are still in their growth phase as their Market Cap is much lower than Cluster 2. 
+
+
+
+## Using Silhoutte Method 
+```{r}
+fviz_nbclust(pharma_data_norm, kmeans, method = "silhouette") 
+```
+
+#### By Using Silhouette Method we got the optimal numbers of clusters i.e K=5
+
+
+```{r}
+k5<-kmeans(pharma_data_norm, centers = 5, nstart = 25)
+k5
+```
+#### we can see that by Using Silhoutte Method, we got 5 clusters with the size of 2,4,8,3 and 4 .
+
+
+
+```{r}
+fviz_cluster(k5, data=pharma_data_norm)
+```
+
+```{r}
+clusters_silhouette <- k5$cluster
+
+df2 <- cbind(pharma_data,clusters_silhouette)
+```
+
+```{r}
+Sil_table <- aggregate(df2[,-c(1:2,12:14)],by=list(df2$clusters_silhouette),FUN="median")
+print(Sil_table[,-1])
+```
+
+```{r}
+Sil_Summary <- table(df2$cluster, df2$Median_Recommendation)
+names(dimnames(Sil_Summary)) <- c("Cluster", "Recommendation")
+Sil_Summary <- addmargins(Sil_Summary)
+Sil_Summary
+```
+#### Analysis: Cluster 3 has the highest total recommendations (8 out of 21) and the highest "Hold" Recommendation (4 out of 9). Cluster 1,4 and 5 have no recommendation of "Moderate Sell" and " Strong Buy". Cluster 2 has 2 recommendation each for "Moderate Buy" and "Moderate Sell". Overall, there have been 9 "Hold" recommendations made out of 21. 
+
+
+```{r}
+location2 <- table(df2$cluster, df2$Location)
+names(dimnames(location2)) <- c("Cluster", "Location")
+location2 <- addmargins(location2)
+location2
+```
+```{r}
+ggplot(df2,aes(x=clusters_silhouette,fill=Location)) + geom_bar()
+```
+
+#### Analysis: 13 out of 21 companies resides in US followed by 3 in UK and each location have 1 company. Cluster 3 has the highest number of companies located in US (5/13) followed by cluster 3 (3/13)Cluster 3 has the highest number of comapnies (i.e (8/21)) as compared to all other clusters. 
+
+```{r}
+exchange2 <- table(df2$cluster, df1$Exchange)
+names(dimnames(exchange2)) <- c("Cluster", "Exchange")
+exchange2<- addmargins(exchange2)
+exchange2
+```
+
+```{r}
+ggplot(df2,aes(x=clusters_silhouette,fill=Exchange)) + geom_bar()
+```
+#### Analysis: All companies in all clusters (except cluster 4) are listed on NYSE exchange. In cluster 4, there are total 3 companies and all companies are listed on all three exchanges. 
+
+
+## Naming the clusters which were formed by using Silhouette Method
+
+#### Cluster 1: Moderate Profitability and Stable Growth 
+This group represents that  the companies have moderate growth in revenues with moderate NPM. Companies in this group relies 50% on borrowings, This group is utilizing the assets efficiently as evident by ROA and Asset turnover Ratio. This group has substantial market cap and stable profitability metrics. Higher PE ratio will make the investors cautious to invest in pharma sector.
+
+
+#### Cluster 2: High Growth  and Profitable Expansion
+This group represents the high growth in revenue with better Profit Margin. The ROE and ROA provides the investors the opportunities to invest in Pharma Sector. Companies in this group are in the expansion phase as evident by low Market Cap. This Group is offering better PE Ratio. companies are relying 60% on their borrowings. 
+
+#### Cluster 3: Pharma Leaders 
+This group represents the the moderate growth with better NPM as the companies pay low financial cost due to low borrowing improving the NPM. Company is efficiently utilizing its Assets and is providing better return on equity which can attract investors to invest in Pharma companies. These can be referred to as Pharma leaders as they have the substantial market share in pharma industry. 
+
+#### Cluster 4: Emerging Pharma Players with the Volatile Performance. 
+This group represents the the moderate growth with the moderate NPM. It is heavily reliant on borrowings as compared to the equity. As beta is  highest in this group, it means that stock prices are very volatile to the market conditions. 
+we can assume these are new entrant in the markets as market cap is very low but they have potential to grow as evident by their Revenue growth and NPM. 
+
+#### Cluster 5: Pharma Industry Pioneers
+The companies in this group can be considered as pioneers in pharma industry as they hold a high market share. ROA and ROE are also reported highest as compared to all other groups. Companies are mostly relying on the equity. They are their peak stage as they have reported highest NPM, Asset turnover, ROA and ROE among all other groups.
+
+

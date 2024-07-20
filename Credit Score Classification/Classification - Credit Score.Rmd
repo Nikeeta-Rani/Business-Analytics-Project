@@ -1,0 +1,418 @@
+---
+title: "FML Final Project"
+author: "Nikeeta Rani"
+date: "2024-04-16"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Loading Necessary Libraries 
+```{r}
+library(readxl)
+library(dplyr)
+library(ISLR)
+library(caret)
+library(corrplot)
+library(GGally)
+library(class)
+library(gmodels)
+library(e1071)
+library(pROC)
+library(psych)
+library(FactoMineR)
+library(missMDA)
+library(devtools)
+library(ggbiplot)
+library(factoextra)
+library(ggplot2)
+library(tidyr)
+```
+
+# Loading the Data 
+```{r}
+Credit_Raw<- read_excel("C:/Users/hp/Desktop/KSU/FML/Final Project/CreditScoreData.xlsx")
+```
+
+# Removing one level of Response i.e "Standard"
+```{r}
+Credit<-Credit_Raw[Credit_Raw$Credit_Score != "Standard", ]
+```
+
+```{r}
+head(Credit)
+```
+
+# Descriptive Statistics
+```{r}
+summary(Credit)
+```
+
+```{r}
+sapply(Credit, class)
+```
+
+```{r}
+colnames(Credit)
+```
+# Identifying Missing Values 
+```{r}
+Missing_Data<-colMeans(is.na(Credit))
+Missing_Data
+```
+### Analysis: Type of Loan column has 9% of the missing data 
+
+# Removing Missing Values 
+```{r}
+Credit<-na.omit(Credit)
+Missing_Data<-colMeans(is.na(Credit))
+Missing_Data
+```
+
+# Removing Unnecassary Variables (ID, Customer ID, Month, Name and SSN) and Few Categorical Variables 
+```{r}
+Credit_Score_Filtered <- Credit[, -c(1:4, 6,7,14,26)]
+colnames(Credit_Score_Filtered)
+```
+
+```{r}
+summary(Credit_Score_Filtered)
+```
+
+# BoxPlot 
+
+### Identifying Numeric Variables
+```{r}
+numeric_df <- select_if(Credit_Score_Filtered, is.numeric)
+```
+
+### Box Plot1 
+```{r}
+Plot_Box1 <- data.frame(
+  Num_Bank_Accounts = numeric_df$Num_Bank_Accounts, 
+  Num_Credit_Card = numeric_df$Num_Credit_Card, 
+  Num_of_Loan = numeric_df$Num_of_Loan
+)
+par(mar = c(7, 5, 4, 2) + 0.1) 
+boxplot(Plot_Box1, las = 2, cex.axis = 0.7)
+```
+### Boxplot 2
+```{r}
+Plot_Box2 <- data.frame(
+  Interest_Rate = numeric_df$Interest_Rate, 
+  Delay_From_Due_Date = numeric_df$Delay_from_due_date,
+  Changed_Credit_Limit= numeric_df$Changed_Credit_Limit,
+  Credit_Utilization_Ratio = numeric_df$Credit_Utilization_Ratio,
+  Age = numeric_df$Age
+)
+par(mar = c(7, 5, 4, 2) + 0.1) 
+boxplot(Plot_Box2, las = 2, cex.axis = 0.7)
+```
+### Boxplot 3
+```{r}
+Plot_Box3 <- data.frame(
+  Num_Delayed_Payment=  numeric_df$Num_of_Delayed_Payment, 
+  Number_Credit_Inquiries = numeric_df$Num_Credit_Inquiries,
+  Outstanding_Debt = numeric_df$Outstanding_Debt
+)
+par(mar = c(7, 5, 4, 2) + 0.1) 
+boxplot(Plot_Box3, las = 2, cex.axis = 0.7)
+```
+
+###  Boxplot 4 
+```{r}
+Plot_Box4 <- data.frame(
+  Amount_Invested_Monthly=  numeric_df$Amount_invested_monthly, 
+  Monthly_Balance = numeric_df$Monthly_Balance,
+  Credit_History_Age_Months = numeric_df$Credit_History_Age_Months
+)
+par(mar = c(7, 5, 4, 2) + 0.1) 
+boxplot(Plot_Box4, las = 2, cex.axis = 0.7)
+```
+
+### Box Plot 5,6 and 7 
+```{r}
+Boxplot_5 <- boxplot(numeric_df$Amount_invested_monthly)
+Boxplot_6 <- boxplot(numeric_df$Monthly_Balance)
+Boxplot_7 <- boxplot(numeric_df$Annual_Income)
+```
+```{r}
+numeric_df <- select_if(Credit_Score_Filtered, is.numeric)
+```
+
+
+# Plotting Histrogram
+```{r}
+Hist_data <- numeric_df %>%
+  gather(key = "Variable", value = "Value")
+
+ggplot(Hist_data, aes(x = Value)) +
+  geom_histogram(fill = "lightblue", color = "black", bins = 30) +  # Set fill and outline color
+  facet_wrap(~ Variable, scales = 'free') +
+  theme_classic() +
+  theme(aspect.ratio = 0.5, axis.title = element_blank(), panel.grid = element_blank()) 
+```
+
+```{r}
+ncol(Credit_Score_Filtered)
+```
+
+```{r}
+summary(Credit_Score_Filtered)
+```
+
+# Transforming Categorical into Dummy Variables
+```{r}
+Credit_Score_Filtered$Credit_Score <- as.factor(Credit_Score_Filtered$Credit_Score)
+levels(Credit_Score_Filtered$Credit_Score) <- c(Poor = "0", Good = "1")
+unique(Credit_Score_Filtered$Credit_Score)
+```
+```{r}
+Credit_Score_Filtered$Credit_Mix <- as.factor(Credit_Score_Filtered$Credit_Mix)
+levels(Credit_Score_Filtered$Credit_Mix) <- c(Poor = "3", Good = "1", standard="2")
+unique(Credit_Score_Filtered$Credit_Mix)
+```
+```{r}
+Credit_Score_Filtered$Payment_of_Min_Amount <- as.factor(Credit_Score_Filtered$Payment_of_Min_Amount)
+levels(Credit_Score_Filtered$Payment_of_Min_Amount) <- c(Yes = "1", No = "0")
+unique(Credit_Score_Filtered$Payment_of_Min_Amount)
+```
+
+```{r}
+Credit_Score_Filtered$Credit_Score <- as.numeric(as.character(Credit_Score_Filtered$Credit_Score))
+Credit_Score_Filtered$Payment_of_Min_Amount <- as.numeric(as.character(Credit_Score_Filtered$Payment_of_Min_Amount))
+Credit_Score_Filtered$Credit_Mix <- as.numeric(as.character(Credit_Score_Filtered$Credit_Mix))
+```
+
+```{r}
+summary(Credit_Score_Filtered)
+```
+
+```{r}
+ncol(Credit_Score_Filtered)
+```
+
+# Normalizing Data Set Except for out response i.e Credit Score
+```{r}
+Credit_Score_work <- Credit_Score_Filtered[, -20]
+Normalized_Model <- preProcess(Credit_Score_work, method = c('center'))
+Credit_Normalized_Excluded <- predict(Normalized_Model, Credit_Score_work)
+Credit_Normalized <- cbind(Credit_Normalized_Excluded, Credit_Score = Credit_Score_Filtered[, 20])
+summary(Credit_Normalized)
+```
+
+# Correlation Matrix
+```{r}
+Credit_Cor <- Credit_Normalized
+correlation_matrix <- cor(Credit_Cor)
+corrplot(correlation_matrix, method="circle")
+```
+
+
+# Selecting Features using PCA 
+
+## PCA 1
+```{r}
+pc <- prcomp(Credit_Normalized,
+             center = TRUE,
+            scale. = TRUE)
+```
+
+`
+# Pait Matrix -2 - With PCA 
+```{r}
+ pairs.panels(pc$x,
+             gap=0,
+             bg = c("red", "yellow", "blue")[Credit_Normalized$Credit_Score],
+             pch=21)
+```
+
+
+```{r}
+fviz_pca_var(pc, col.var = "cos2", 
+             gradient.cols = c ("blue","orange", "green"),
+             repel = TRUE)
+             
+```
+
+```{r}
+colnames(Credit_Normalized)
+```
+```{r}
+Credit_Noramlized_After_PCA <- Credit_Normalized[, -c(1,2,4,5,6,7,9,10,11,12,14,17,18,19)]
+colnames(Credit_Noramlized_After_PCA)
+```
+```{r}
+  pc1 <- prcomp(Credit_Noramlized_After_PCA,
+               center = TRUE,
+              scale. = TRUE)
+```
+
+# Pair Matrix - 3 - With PCA
+```{r}
+pairs.panels(pc1$x,
+             gap=0,
+             bg = c("red", "yellow", "blue")[Credit_Noramlized_After_PCA$Credit_Score],
+             pch=21)
+
+```
+
+
+## PCA 2 
+```{r}
+fviz_pca_var(pc1, col.var = "cos2", 
+             gradient.cols = c ("blue","orange", "green"),
+             repel = TRUE)
+```
+
+# Correlaton with top Fetaures
+```{r}
+Credit_Cor <- Credit_Noramlized_After_PCA
+correlation_matrix <- cor(Credit_Cor)
+corrplot(correlation_matrix, method="circle")
+```
+
+
+```{r}
+ncol(Credit_Noramlized_After_PCA)
+head(Credit_Noramlized_After_PCA)
+```
+
+# Partitioning the data in Testing(70%) and Training (30%) 
+```{r}
+set.seed(123)
+Index_train <- createDataPartition(Credit_Noramlized_After_PCA$Credit_Score, p = 0.7, list = FALSE)
+Train <- Credit_Noramlized_After_PCA[Index_train, ]
+Test <- Credit_Noramlized_After_PCA[-Index_train, ]
+```
+
+
+```{r}
+Train_Predictors <- Train[, 1:5]
+Test_Predictors <- Test[, 1:5]
+Train_labels <- Train[, 6]
+Test_labels <- Test[, 6 ]
+```
+
+# Using Knn Method 
+
+```{r}
+Search_Grid <- expand.grid(k = 1:10) 
+Train_labels <- as.factor(Train_labels)
+model <- train(x = Train_Predictors, y = Train_labels, method = "knn", tuneGrid = Search_Grid) 
+model 
+```
+
+```{r}
+Predicted_Model <- knn(Train_Predictors, Test_Predictors, cl = Train_labels, k = 1)
+head(Predicted_Model)
+```
+
+# Cross Table
+```{r}
+CrossTable(x=Test_labels,y=Predicted_Model,prop.chisq=FALSE )
+```
+
+
+# Confusion Matrix 
+```{r}
+Confusion_Matrix <- as.factor(Predicted_Model)
+Test_labels <- as.factor(Test_labels)
+Confusion_Matrix1 <- confusionMatrix(data = Predicted_Model, reference = Test_labels)
+Confusion_Matrix1
+```
+# Confusion Matrix Using Knn - Recall, Precision and Accuracy 
+```{r}
+TN <- 784
+FP <- 135
+FN <- 159
+TP <- 1909
+
+Recall <- TP / (TP + FN)
+Precision <- TP / (TP + FP)
+Accuracy <- (TP + TN) / (TP + TN + FP + FN)
+
+Accuracy
+Recall
+Precision
+```
+
+
+# Using Naive Bayes Model
+```{r}
+nb_Model <- naiveBayes(Credit_Score~., data = Train)
+head(nb_Model)
+```
+
+```{r}
+Predicted_Model_2<-predict(nb_Model, Test, type = "raw")
+head(Predicted_Model_2, n=20)
+```
+# ROC curve
+```{r}
+roc_curve <- roc(Test$Credit_Score, Predicted_Model_2[, "1"])
+plot(roc_curve, main = "ROC Curve", col = "blue")
+auc_value <- auc(roc_curve)
+auc_value
+```
+
+```{r}
+Predicted_Model_2<-predict(nb_Model, Test)
+head(Predicted_Model_2, n=6)
+```
+
+```{r}
+levels(Predicted_Model)
+levels(Predicted_Model_2)
+```
+
+
+```{r}
+CrossTable(x=Test$Credit_Score,y=Predicted_Model_2,prop.chisq=FALSE )
+```
+
+
+
+# Confusion Matrix Using Naive Bayes
+```{r}
+Confusion_Matrix_nb <- as.factor(Predicted_Model_2)
+Confusion_Matrix2 <- confusionMatrix(data = Confusion_Matrix_nb, reference = Test_labels)
+Confusion_Matrix2
+```
+# Confusion Matrix Using Naive Bayes - Recall, Precision and Accuracy 
+```{r}
+TN <- 807
+FP <- 112
+FN <- 341
+TP <- 1727
+
+Recall <- TP / (TP + FN)
+Precision <- TP / (TP + FP)
+Accuracy <- (TP + TN) / (TP + TN + FP + FN)
+
+Accuracy
+Recall
+Precision
+```
+```
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

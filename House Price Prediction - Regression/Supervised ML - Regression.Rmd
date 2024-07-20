@@ -1,0 +1,207 @@
+---
+title: "BA Assignment 3"
+author: "Nikeeta Rani"
+date: "2024-04-20"
+output: pdf_document
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+
+# **Executive Summary**
+
+### **Introduction**
+This document consists of comprehensive analysis of residential home sales price.The data set consisted of 12 variables in total. 11 variables which were used as an input to predict the sales price (the output). 
+
+The input variables  were: 
+
+1) 	Finished square feet  2) Number of bedrooms 3)	Number of bathrooms 4) 	Air conditioning 5) 	Garage size 6) Pool 7) Year BUilt 8) Quality of Construction 9) 	Style 10) 	Lot size 11) Adjacent to highway
+
+The output Variable was: 
+
+Sales Prices 
+
+### **Purpose**   
+The purpose of this document is to identify the relationship between Dependent Variable (Sales prices) and independent variables by using multiple linear regression model and identify how significant the importance of each input variable is (in th presence of other variables) in the model.  
+ 
+### **Hypothesis Testing**
+
+We form the Null and Alternative of the  the complete model and of the individual coefficients. 
+
+#### *For Complete Model:*
+
+Ho : B1= B2=B3=B4=B5=B6=B7=B8=B9=B10=B11 = 0
+ 
+Ha :  Not all Bs = 0    
+ 
+ Here, Null Hypothesis explains that all input variables have no impact on the Sales Price. And Alternative Hypothesis Explains that at least one of the input variable's slope is not zero.
+
+#### *For Individual Coefficients: *
+
+ Ho :  (Bn) = 0
+ 
+ Ha :  (Bn) = 0 
+
+Here, Null Hypothesis explains that there is no relationship between the independent variable on the Sales Prices. And Alternative Hypothesis Explains that there is a relationship between X and Y.
+
+
+### **R-Square:** 
+
+First we will discuss which variables is explaining the highest variability or change in the sales price.For this we have calculated R-Square 
+
+Sqft has reported the highest R-sqaure of 67%. which means that 67% of the variabilty in the sales prices is explained alone by sqft (Assumption) in the presence of other variables which means that if one or two variables are removed from the model the R-square of Sqft could have been different This contribution of SqFt in explaining the sales prices is adjusted for all other variables in the model. 
+
+Talking about the R-square of the overall model, 77.5% of the variability in the sales price if explained by the all the input variables. 
+
+###  **Multiple Linear Regression Model - All Variables excluding Quality of Construction**
+
+After constructing the multiple linear regression model. We obtained the following equation
+
+Sales Price = -3.503e+06 +(1.485e+02 * SqFt )+(-1.186e+04 * Bedrooms )+(1.012e+04 * Bathrooms )+(-3.499e+03 * AC )+(1.806e+04 * Garage )+(8.942e+03 * Pool )+(1.743e+03 * Year )+(-1.053e+04 * Style )+(1.330e+00 * Lotsize )+(-3.883e+04 * Hwy)
+
+
+The above equation indicates that the House price will increase with every additional units of Sqft, Bathrooms, garage , Pool and Lotsize and House price will decrease with every additional Unit of Bedrooms, AC, Style and if the house is adjacent to highway. These variables are  positively/negatively impacting the output considering all other input variables are present in the model, which means that the effect of all independent variable s dependent upon what other variables are there in the model. 
+
+### **Hypothesis Testing**
+
+#### *P-Value (For overall Model)*
+
+ Ho : B1=B2=B3=B4=B5=B6=B7=B8=B9=B10=B11 = 0 
+ 
+ Ha :  Not all Bs = 0 
+ 
+ We established the null and alternative Hypothesis above. The p-value we calculated for the complete model (11 Variables) is 2.2e-16 which is very close to zero which means we will reject the null hypothesis in the favor of alternative hypothesis. Means atleast one independent variable has a linear relationship with sales price
+ 
+ At 0.05 Significance Level: As our P value is smaller that alpha i.e 0.05, we will reject the null hypothesis.But there is a chance of 5% that we are making type 1 error. which means that although we have concluded alternative hypothesis, but in reality null hypothesis is true.  
+ 
+ 
+#### *P-Value (For Individual Coefficients)*
+
+  Ho :  B(n) = 0
+  
+  Ha :  B(n) = 0 
+ 
+ We calculated P-value for all 11 coefficients in the model. P-value of AC and Pool seems to highest and closer to one. Therefore, we can conclude that these two variables have no relationship with the sales price. Other 8 variables i.e Finished square feet ,  Number of bedrooms, 	Number of bathrooms , Garage size , Year BUilt  	Style, 	Lot size,  Adjacent to highway have p values near to zero, forming linear relationship with the sales price. 
+ 
+ At 0.05 Significance level, P-value of AC, Pool and Hwy seems greater than alpha of 0.05. We will accept the null hypothesis that these variables individually do not form the linear relationship with Sales Prices. Here there are chances of making Type 2 error, which means that although we are concluding Null Hypothesis, but in reality Alternative Hypothesis can be true. 
+ 
+ P-value of all other variables is smaller than alpha, hence reject the null in facor of the alternative hypothesis that these variable do create a linear relation with the Sales price. Here are 5% chances of Type 1 error. 
+ 
+### **Multiple Linear Regression Model - Excluding Insignificant Variables**
+
+After analyzing P-Value, we observed that AC and Pool are not significant to form a linear relationship with Sales price. Then, we created multiple linear model by first excluding AC because it has the high P-value. We did not exclude both the variables at the same time because all the independent variables are depend on the other, which means that there were chances that Pool would have become significant after removing AC. 
+ 
+After removing AC as it had the highest p-vale, we observed that R-square is still significant at 77.49% percent. Also in this model after excluding AC, p-value of Pool also stood at 0.445 showing that it is still insignifact. 
+
+Then another model was created in which now Pool was excluded after AC. R-square was reported at 77.46% which means still the independent variables explain some variability in Sales Price. Now in this model, All independent variables had a p-value nearest to zero which means now all remaining variables form linear relationship with Sales Price.  
+
+#### *Final Model Linear Equation* : 
+
+Sales Price = -3.443e+06 +(1.488e+02 * SqFt )+(-1.191e+04 * Bedrooms )+(1.034e+04 * Bathrooms )+(1.790e+04 * Garage )+(1.710e+03 * Year )+(-1.056e+04 * Style )+(1.326e+00 * Lotsize )+(-3.885e+04 * Hwy)
+
+
+### **Analysis of Graphs**
+
+We plotted the graphs for residuals against fitted values (Predicted Values) to check if our following assumption has been satisfied or not:
+
+1) NID(0, Sigma Squared):  which means normal, Independent with the mean of zero, and the variance of sigma squared.  This is explaining the distribution of residuals that it should follow the above properties. 
+
+On Y Axis we plotted Residuals, from wich  we observed that on average, the value of the residuals is zero and all the data points are randomly distributed along the mean line which means that some data points are above the line and some are below the line with no clear pattern showing the linear relation. We also observed that it is violating the assumption of constant variance (Sigma Squared) because there is a less variation in residuals at the beginning (Left) and more variation in residuals along the line (Right).
+
+We also Constructed Q-Q Plot, from which we observed that almost all the residuals are following the line which shows that they are normally distributed with some outlines at the tails. 
+
+#### *Summary of Assumptions:*
+
+Linear Model is Appropriate = Satisfied
+
+Constant Variance = Not Satisfied 
+
+Normal Distribution = Satisfied
+
+
+### **Conclusion**
+
+This analysis was conducted to see the relationship between the various independent variables with Dependent Variable. We observed that Sqft is solely explaining the variability in House Sales Price with the highest R-Square of 67%. We observed Bedrooms, AC, Style and if the house is adjacent to highway results in the price deduction of house whereas other variables resulted in price increase of a house. We also identifies that AC and Pool were not proven to be significant in forming the relationship with Sales Prices . Hence removing these variables did not effected the overall validity of the model which is evident by comparing R-Square. Two out of three assumption for Linear Regression were satisfied i.e Linearity and Normal Distribution. 
+
+
+
+
+# Loading Required Packages
+```{r}
+library(stats)
+```
+
+# Loading the data
+```{r}
+Sale_Price<-read.csv("C:/Users/hp/Desktop/KSU/Business Analytics/Assignment 3/APPENC07.csv")
+```
+
+# Indentifying R-Sqaure for each independent Variable
+
+
+```{r}
+Sqft<- lm(SalesPrice~SqFt, Sale_Price)
+Bedrooms<- lm(SalesPrice~Bedrooms, Sale_Price)
+Bathrooms<- lm(SalesPrice~Bathrooms, Sale_Price)
+AC <- lm(SalesPrice~AC, Sale_Price)
+Garage<- lm(SalesPrice~Garage, Sale_Price)
+Pool <- lm(SalesPrice~Pool, Sale_Price)
+Year <- lm(SalesPrice~Year, Sale_Price)
+Quality <- lm(SalesPrice~Qualtiy, Sale_Price)
+Style <- lm(SalesPrice~Style, Sale_Price)
+LotSize <- lm(SalesPrice~LotSize, Sale_Price)
+Highway<- lm(SalesPrice~Hwy, Sale_Price)
+```
+
+```{r}
+summary( Sqft)$r.squared
+summary(Bedrooms)$r.squared
+summary( Bathrooms)$r.squared
+summary(AC)$r.squared
+summary(Garage)$r.squared
+summary(Pool)$r.squared
+summary(Year)$r.squared
+summary(Quality)$r.squared
+summary(Style)$r.squared
+summary(LotSize)$r.squared
+summary(Highway)$r.squared
+```
+
+# Constructing Multiple Linear Regression Model
+```{r}
+regression_Model<- lm(SalesPrice ~ SqFt+Bedrooms+Bathrooms+AC+Garage+Pool+Year+Style+LotSize+Hwy, Sale_Price)
+summary(regression_Model)
+anova(regression_Model)
+```
+
+# Final Model:
+
+### First Excluding AC variable as it has the highest P-Value
+```{r}
+Final_Model_1<- lm(SalesPrice ~ SqFt+Bedrooms+Bathrooms+Garage+Pool+Year+Style+LotSize+Hwy, Sale_Price)
+summary(Final_Model_1)
+anova(Final_Model_1)
+```
+
+### Second Excluding Pool variable as it has the highest P-Value
+```{r}
+Final_Model_2<- lm(SalesPrice ~ SqFt+Bedrooms+Bathrooms+Garage+Year+Style+LotSize+Hwy, Sale_Price)
+summary(Final_Model_2)
+anova(Final_Model_2)
+```
+
+# Plotting Graph: Residuals and Fitted Values 
+```{r}
+plot(Final_Model_2$fitted.values, resid(Final_Model_2), xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red")
+```
+
+```{r}
+qqnorm(resid(Final_Model_2))
+qqline(resid(Final_Model_2))
+```
+
+
